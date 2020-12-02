@@ -11,8 +11,6 @@ set softtabstop=0
 setlocal omnifunc=syntaxcomplete#Complete
 filetype on
 set laststatus=2
-"set mouse=a
-"set ttymouse=xterm2
 
 function! SetStatusLine()
 	if mode() =~ 'i'
