@@ -12,6 +12,8 @@ setlocal omnifunc=syntaxcomplete#Complete
 filetype on
 set laststatus=2
 
+#test text
+
 function! SetStatusLine()
 	if mode() =~ 'i'
 		let id = 1
