@@ -8,11 +8,13 @@ set list listchars=tab:¦_
 set noexpandtab
 set shiftwidth=2
 set softtabstop=0
+set clipboard&
+set clipboard^=unnamedplus
 setlocal omnifunc=syntaxcomplete#Complete
 filetype on
 set laststatus=2
-
-#test text
+"set mouse=a
+"set ttymouse=xterm2
 
 function! SetStatusLine()
 	if mode() =~ 'i'
@@ -51,6 +53,7 @@ let g:netrw_altv=1
 let g:netrw_alto=1
 
 let g:NetrwIsOpen=0
+
 function! ToggleNetrw()
 	if g:NetrwIsOpen
 		let i = bufnr("$")
@@ -88,20 +91,44 @@ function! NetrwClose()
 	endif
 endfunction
 
+function! Run()
+	let l:line=getline(0,line("$"))
+	let l:buffText=join(l:line,"")
+	let l:buffText=substitute(l:buffText,[" ","	"],["",""])
+	let l:buffText=l:buffText . "\n"
+	call term_sendkeys(g:scmterm,l:buffText)
+endfunction
+
+let g:scmterm=0
+function! ScmTermRun()
+	if g:scmterm == 0
+		rightbelow term gosh
+		let g:scmterm=term_list()[0]
+	endif
+endfunction
+
+function! ScmCloseChk()
+	if match(term_list(),g:scmterm)
+		let g:scmterm=0
+	endif
+endfunction
+
 command! Term :rightbelow term
 command! UnsetNum :set nonu
 command! SetNum :set number
 "goshのパス通しをしていることが条件
-autocmd Filetype scheme command! Scheme :rightbelow term tail -f gosh_output
-autocmd FileType scheme command! Run :!gosh %>>gosh_output 2>&1 &
+autocmd FileType scheme command! Run :call Run()
+autocmd FileType scheme command! RunScheme :call ScmTermRun()
 "ファイル一覧の自動展開等の操作
 autocmd TabEnter * :let g:tabcheck=0
 autocmd BufReadPost * :call NetrwNewTab()
 autocmd QuitPre,TabLeave * :call NetrwClose()
 autocmd TabClosed * :let g:NetrwIsOpen=0
-"スペースからタブへの自動置換(起動時)
 autocmd VimEnter * :wincmd l
+"スペースからタブへの自動置換(起動時)
 autocmd VimEnter * :retab!
+
+autocmd WinEnter * :call ScmCloseChk()
 
 set tabstop=2
 set history=5000
