@@ -11,7 +11,7 @@ set softtabstop=0
 set clipboard&
 set clipboard^=unnamedplus
 setlocal omnifunc=syntaxcomplete#Complete
-filetype on
+filetype plugin indent on
 set laststatus=2
 "set mouse=a
 "set ttymouse=xterm2
@@ -91,12 +91,22 @@ function! NetrwClose()
 	endif
 endfunction
 
-function! Run()
-	let l:line=getline(0,line("$"))
-	let l:buffText=join(l:line,"")
-	let l:buffText=substitute(l:buffText,[" ","	"],["",""])
-	let l:buffText=l:buffText . "\n"
-	call term_sendkeys(g:scmterm,l:buffText)
+function! Run(...)
+	let l:fname=get(a:,1,"")
+	if l:fname == ""
+		let l:line=getline(0,line("$"))
+		let l:buffText=join(l:line,"")
+		let l:text=l:buffText . "\n"
+	else
+		let l:text=GetText(l:fname)
+	endif
+	call term_sendkeys(g:scmterm,l:text)
+endfunction
+
+function! GetText(fname)
+	let l:cmd="cat ".a:fname
+	let l:text=system(l:cmd)
+	return l:text
 endfunction
 
 let g:scmterm=0
@@ -113,12 +123,27 @@ function! ScmCloseChk()
 	endif
 endfunction
 
+function! SetUp(ftype)
+	if a:ftype == "scheme"
+		:call Scheme()
+	else
+		:call Normal()
+	endif
+endfunction
+
+function! Normal()
+	inoremap ' ''<Left>
+endfunction!
+
+function! Scheme()
+	"goshのパス通しをしていることが条件
+	command! RunScheme :call ScmTermRun()
+	command! -nargs=? Run :call Run(<f-args>)
+endfunction!
+
 command! Term :rightbelow term
 command! UnsetNum :set nonu
 command! SetNum :set number
-"goshのパス通しをしていることが条件
-autocmd FileType scheme command! Run :call Run()
-autocmd FileType scheme command! RunScheme :call ScmTermRun()
 "ファイル一覧の自動展開等の操作
 autocmd TabEnter * :let g:tabcheck=0
 autocmd BufReadPost * :call NetrwNewTab()
@@ -129,6 +154,7 @@ autocmd VimEnter * :wincmd l
 autocmd VimEnter * :retab!
 
 autocmd WinEnter * :call ScmCloseChk()
+autocmd FileType * :call SetUp(expand('<amatch>'))
 
 set tabstop=2
 set history=5000
@@ -146,6 +172,7 @@ tnoremap <C-e> <C-\><C-n>:q!<CR>
 tnoremap <C-n><C-n> <C-\><C-n>
 
 inoremap <C-^> <ESC>ggVG=
+
 inoremap {<CR> {}<Left><CR><ESC><S-o>
 inoremap [<CR> []<Left><CR><ESC><S-o>
 inoremap (<CR> ()<Left><CR><ESC><S-o>
@@ -154,4 +181,3 @@ inoremap ( ()<Left>
 inoremap { {}<Left>
 inoremap [ []<Left>
 inoremap " ""<Left>
-inoremap ' ''<Left>
