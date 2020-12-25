@@ -16,6 +16,38 @@ set laststatus=2
 "set mouse=a
 "set ttymouse=xterm2
 
+
+function! SetUp(ftype)
+	if a:ftype == "scheme"
+		:call Scheme()
+	elseif a:ftype == "markdown"
+		:call MarkDown()
+	else
+		:call Normal()
+	endif
+endfunction
+
+let g:system="unknown"
+
+function! Normal()
+	let g:system="normal"
+	inoremap ' ''<Left>
+endfunction!
+
+function! Scheme()
+	let g:system="scheme"
+	"goshのパス通しをしていることが条件
+	command! RunScheme :call ScmTermRun()
+	command! -nargs=? Run :call Run(<f-args>)
+endfunction
+
+function! MarkDown()
+	let g:system="markdown"
+	inoremap <Space><Space> <CR>
+endfunction
+
+autocmd FileType * :call SetUp(expand('<amatch>'))
+
 function! SetStatusLine()
 	if mode() =~ 'i'
 		let id = 1
@@ -30,7 +62,7 @@ function! SetStatusLine()
 		let id = 4
 		let mode_name = 'Visual'
 	endif
-	return '%' . id . '*[' . mode_name . ']%*%5*%<%F%=[%{&ff}] %M %R %18([%{&ft}][%l/%L]%)%*'
+	return '%' . id . '*[' . mode_name . ']%*%5*%<%F%=[%{&ff}] %M %R %18([' . g:system . '][%{&ft}][%l/%L]%)%*'
 endfunction
 
 hi User1 ctermfg=16 ctermbg=196
@@ -123,23 +155,12 @@ function! ScmCloseChk()
 	endif
 endfunction
 
-function! SetUp(ftype)
-	if a:ftype == "scheme"
-		:call Scheme()
-	else
-		:call Normal()
-	endif
+"これはボツになった
+function! FilePath(fname)
+	let l:cmd="find ~/ -name ".a:fname." -type f -perm /u=rw"
+	let l:find=system(l:cmd)
+	echo l:find
 endfunction
-
-function! Normal()
-	inoremap ' ''<Left>
-endfunction!
-
-function! Scheme()
-	"goshのパス通しをしていることが条件
-	command! RunScheme :call ScmTermRun()
-	command! -nargs=? Run :call Run(<f-args>)
-endfunction!
 
 command! Term :rightbelow term
 command! UnsetNum :set nonu
@@ -154,7 +175,6 @@ autocmd VimEnter * :wincmd l
 autocmd VimEnter * :retab!
 
 autocmd WinEnter * :call ScmCloseChk()
-autocmd FileType * :call SetUp(expand('<amatch>'))
 
 set tabstop=2
 set history=5000
@@ -167,6 +187,8 @@ set incsearch
 
 noremap <silent>== :call ToggleNetrw()<CR>
 noremap ^ ggVG=
+
+nnoremap <CR> i<CR><ESC>
 
 tnoremap <C-e> <C-\><C-n>:q!<CR>
 tnoremap <C-n><C-n> <C-\><C-n>
