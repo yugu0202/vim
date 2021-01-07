@@ -13,15 +13,19 @@ set clipboard^=unnamedplus
 setlocal omnifunc=syntaxcomplete#Complete
 filetype plugin indent on
 set laststatus=2
-"set mouse=a
+set mouse=a
 "set ttymouse=xterm2
 
+packadd termdebug
+let g:termdebug_wide = 163
 
 function! SetUp(ftype)
 	if a:ftype == "scheme"
 		:call Scheme()
 	elseif a:ftype == "markdown"
 		:call MarkDown()
+	elseif a:ftype == "c"
+		:call C()
 	else
 		:call Normal()
 	endif
@@ -38,13 +42,19 @@ function! Scheme()
 	let g:system="scheme"
 	"goshのパス通しをしていることが条件
 	command! RunScheme :call ScmTermRun()
-	command! -nargs=? Run :call Run(<f-args>)
+	command! -nargs=? Run :call ScmRun(<f-args>)
 endfunction
 
 function! MarkDown()
 	let g:system="markdown"
 	inoremap <Space><Space> <CR>
 endfunction
+
+function! C()
+	let g:system="c"
+	command! Run :call CRun()
+endfunction
+
 
 autocmd FileType * :call SetUp(expand('<amatch>'))
 
@@ -123,7 +133,7 @@ function! NetrwClose()
 	endif
 endfunction
 
-function! Run(...)
+function! ScmRun(...)
 	let l:fname=get(a:,1,"")
 	if l:fname == ""
 		let l:line=getline(0,line("$"))
@@ -155,7 +165,7 @@ function! ScmCloseChk()
 	endif
 endfunction
 
-"これはボツになった
+"これはボツになった おそすぎる
 function! FilePath(fname)
 	let l:cmd="find ~/ -name ".a:fname." -type f -perm /u=rw"
 	let l:find=system(l:cmd)
