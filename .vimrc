@@ -8,13 +8,15 @@ set list listchars=tab:¦_
 set noexpandtab
 set shiftwidth=2
 set softtabstop=0
-set clipboard&
-set clipboard^=unnamedplus
-setlocal omnifunc=syntaxcomplete#Complete
 filetype plugin indent on
+setlocal omnifunc=syntaxcomplete#Complete
+set completeopt=menuone,noinsert
 set laststatus=2
-set mouse=a
+""set mouse=a
 "set ttymouse=xterm2
+
+" 補完表示時のEnterで改行をしない
+inoremap <expr><CR>  pumvisible() ? "<C-y>" : "<CR>"
 
 packadd termdebug
 let g:termdebug_wide = 163
@@ -54,7 +56,6 @@ function! C()
 	let g:system="c"
 	command! Run :call CRun()
 endfunction
-
 
 autocmd FileType * :call SetUp(expand('<amatch>'))
 
@@ -145,6 +146,17 @@ function! ScmRun(...)
 	call term_sendkeys(g:scmterm,l:text)
 endfunction
 
+function! CRun()
+	let l:fname=expand("%")
+	if term_list() == []
+		rightbelow term
+	endif
+	let l:text="gcc " . l:fname . "\n"
+	call term_sendkeys(term_list()[0],l:text)
+	let l:text="./a.out\n"
+	call term_sendkeys(term_list()[0],l:text)
+endfunction
+
 function! GetText(fname)
 	let l:cmd="cat ".a:fname
 	let l:text=system(l:cmd)
@@ -172,9 +184,13 @@ function! FilePath(fname)
 	echo l:find
 endfunction
 
+function! ManualCopy()
+	set nonu
+	set nolist
+endfunction
+
 command! Term :rightbelow term
-command! UnsetNum :set nonu
-command! SetNum :set number
+command! Cp :call ManualCopy()
 "ファイル一覧の自動展開等の操作
 autocmd TabEnter * :let g:tabcheck=0
 autocmd BufReadPost * :call NetrwNewTab()
@@ -182,7 +198,7 @@ autocmd QuitPre,TabLeave * :call NetrwClose()
 autocmd TabClosed * :let g:NetrwIsOpen=0
 autocmd VimEnter * :wincmd l
 "スペースからタブへの自動置換(起動時)
-autocmd VimEnter * :retab!
+"autocmd VimEnter * :retab!
 
 autocmd WinEnter * :call ScmCloseChk()
 
@@ -192,6 +208,8 @@ set virtualedit=onemore
 set wildmode=list:longest
 
 set hlsearch
+set wrapscan
+set ignorecase
 set smartcase
 set incsearch
 
@@ -213,3 +231,16 @@ inoremap ( ()<Left>
 inoremap { {}<Left>
 inoremap [ []<Left>
 inoremap " ""<Left>
+inoremap <expr><C-n> pumvisible() ? "<Down>" : "<C-n>"
+inoremap <expr><C-p> pumvisible() ? "<Up>" : "<C-p>"
+
+"vimをマスターするために
+" 矢印キーを無効にする
+noremap <Up> <Nop> 
+noremap <Down> <Nop> 
+noremap <Left> <Nop> 
+noremap <Right> <Nop> 
+inoremap <Up> <Nop> 
+inoremap <Down> <Nop> 
+inoremap <Left> <Nop> 
+inoremap <Right> <Nop>
