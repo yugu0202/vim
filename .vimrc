@@ -114,6 +114,16 @@ endif
 call term_sendkeys(g:scmterm,l:text)
 endfunction
 
+function! CCompile(...)
+	let l:fname=expand("%")
+	if term_list() == []
+		rightbelow term
+	endif
+	let l:opts=get(a:,1,"")
+	let l:text="gcc " . l:fname . " " . l:opts . "\n"
+	call term_sendkeys(term_list()[0],l:text)
+endfunction
+
 function! CRun(...)
 	let l:outName="./a.out"
 	for i in range(a:0)
@@ -122,13 +132,7 @@ function! CRun(...)
 			break
 		endif
 	endfor
-	let l:fname=expand("%")
-	if term_list() == []
-		rightbelow term
-	endif
-	let l:opts=join(a:000)
-	let l:text="gcc " . l:fname . " " . l:opts . "\n"
-	call term_sendkeys(term_list()[0],l:text)
+	call CCompile(join(a:000))
 	let l:text=l:outName . "\n"
 	call term_sendkeys(term_list()[0],l:text)
 endfunction
@@ -170,6 +174,7 @@ command! ScmTerm :call ScmTermRun()
 command! -nargs=? ScmRun :call ScmRun(<f-args>)
 "gccのパス通し前提
 command! -nargs=* CRun :call CRun(<f-args>)
+command! -nargs=? CCom :call CCompile(<f-args>)
 
 command! Term :rightbelow term
 command! Cp :call ManualCopy()
