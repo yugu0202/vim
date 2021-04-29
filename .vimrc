@@ -22,58 +22,26 @@ packadd termdebug
 let g:termdebug_wide = 163
 
 function! SetUp(ftype)
-	if a:ftype == "scheme"
-		:call Scheme()
-	elseif a:ftype == "markdown"
-		:call MarkDown()
-	elseif a:ftype == "c"
-		:call C()
-	else
-		:call Normal()
-	endif
-endfunction
-
-let g:system="unknown"
-
-function! Normal()
-	let g:system="normal"
-	inoremap ' ''<Left>
-endfunction!
-
-function! Scheme()
-	let g:system="scheme"
-	"goshのパス通しをしていることが条件
-	command! RunScheme :call ScmTermRun()
-	command! -nargs=? Run :call ScmRun(<f-args>)
-endfunction
-
-function! MarkDown()
-	let g:system="markdown"
-	inoremap <Space><Space> <CR>
-endfunction
-
-function! C()
-	let g:system="c"
-	command! Run :call CRun()
+	let g:system=a:ftype
 endfunction
 
 autocmd FileType * :call SetUp(expand('<amatch>'))
 
 function! SetStatusLine()
-	if mode() =~ 'i'
-		let id = 1
-		let mode_name = 'Insert'
-	elseif mode() =~ 'n'
-		let id = 2
-		let mode_name = 'Normal'
-	elseif mode() =~ 'R'
-		let id = 3
-		let mode_name = 'Replace'
-	else
-		let id = 4
-		let mode_name = 'Visual'
-	endif
-	return '%' . id . '*[' . mode_name . ']%*%5*%<%F%=[%{&ff}] %M %R %18([' . g:system . '][%{&ft}][%l/%L]%)%*'
+if mode() =~ 'i'
+	let id = 1
+	let mode_name = 'Insert'
+elseif mode() =~ 'n'
+	let id = 2
+	let mode_name = 'Normal'
+elseif mode() =~ 'R'
+	let id = 3
+	let mode_name = 'Replace'
+else
+	let id = 4
+	let mode_name = 'Visual'
+endif
+return '%' . id . '*[' . mode_name . ']%*%5*%<%F%=[%{&ff}] %M %R %18([%{&ft}][%l/%L]%)%*'
 endfunction
 
 hi User1 ctermfg=16 ctermbg=196
@@ -98,62 +66,70 @@ let g:netrw_alto=1
 let g:NetrwIsOpen=0
 
 function! ToggleNetrw()
-	if g:NetrwIsOpen
-		let i = bufnr("$")
-		while (i >= 1)
-			if (getbufvar(i, "&filetype") == "netrw")
-				silent exe "bwipeout " . i
-			endif
-			let i-=1
-		endwhile
-		let g:NetrwIsOpen=0
-	else
-		let g:NetrwIsOpen=1
-		silent Vex
-	endif
+if g:NetrwIsOpen
+	let i = bufnr("$")
+	while (i >= 1)
+		if (getbufvar(i, "&filetype") == "netrw")
+			silent exe "bwipeout " . i
+		endif
+		let i-=1
+	endwhile
+	let g:NetrwIsOpen=0
+else
+	let g:NetrwIsOpen=1
+	silent Vex
+endif
 endfunction
 
 function! NetrwNewTab()
-	let g:NetrwIsOpen=1
-	if g:tabcheck == 0
-		let g:tabcheck=1
-		silent Vex
-	endif
+let g:NetrwIsOpen=1
+if g:tabcheck == 0
+	let g:tabcheck=1
+	silent Vex
+endif
 endfunction
 
 function! NetrwClose()
-	if g:NetrwIsOpen
-		let i = bufnr("$")
-		while (i >= 1)
-			if (getbufvar(i,"&filetype") == "netrw")
-				silent exe "bwipeout " . i
-			endif
-			let i-=1
-		endwhile
-		let g:NetrwIsOpen=0
-	endif
+if g:NetrwIsOpen
+	let i = bufnr("$")
+	while (i >= 1)
+		if (getbufvar(i,"&filetype") == "netrw")
+			silent exe "bwipeout " . i
+		endif
+		let i-=1
+	endwhile
+	let g:NetrwIsOpen=0
+endif
 endfunction
 
 function! ScmRun(...)
-	let l:fname=get(a:,1,"")
-	if l:fname == ""
-		let l:line=getline(0,line("$"))
-		let l:buffText=join(l:line,"")
-		let l:text=l:buffText . "\n"
-	else
-		let l:text=GetText(l:fname)
-	endif
-	call term_sendkeys(g:scmterm,l:text)
+let l:fname=get(a:,1,"")
+if l:fname == ""
+	let l:line=getline(0,line("$"))
+	let l:buffText=join(l:line,"")
+	let l:text=l:buffText . "\n"
+else
+	let l:text=GetText(l:fname)
+endif
+call term_sendkeys(g:scmterm,l:text)
 endfunction
 
-function! CRun()
+function! CRun(...)
+	let l:outName="./a.out"
+	for i in range(a:0)
+		if a:000[i] == "-o"
+			let l:outName="./" . get(a:000,i+1,"")
+			break
+		endif
+	endfor
 	let l:fname=expand("%")
 	if term_list() == []
 		rightbelow term
 	endif
-	let l:text="gcc " . l:fname . "\n"
+	let l:opts=join(a:000)
+	let l:text="gcc " . l:fname . " " . l:opts . "\n"
 	call term_sendkeys(term_list()[0],l:text)
-	let l:text="./a.out\n"
+	let l:text=l:outName . "\n"
 	call term_sendkeys(term_list()[0],l:text)
 endfunction
 
@@ -188,6 +164,12 @@ function! ManualCopy()
 	set nonu
 	set nolist
 endfunction
+
+"goshのパス通しをしていることが条件
+command! ScmTerm :call ScmTermRun()
+command! -nargs=? ScmRun :call ScmRun(<f-args>)
+"gccのパス通し前提
+command! -nargs=* CRun :call CRun(<f-args>)
 
 command! Term :rightbelow term
 command! Cp :call ManualCopy()
@@ -236,11 +218,11 @@ inoremap <expr><C-p> pumvisible() ? "<Up>" : "<C-p>"
 
 "vimをマスターするために
 " 矢印キーを無効にする
-noremap <Up> <Nop> 
-noremap <Down> <Nop> 
-noremap <Left> <Nop> 
-noremap <Right> <Nop> 
-inoremap <Up> <Nop> 
-inoremap <Down> <Nop> 
-inoremap <Left> <Nop> 
-inoremap <Right> <Nop>
+"noremap <Up> <Nop> 
+"noremap <Down> <Nop> 
+"noremap <Left> <Nop> 
+"noremap <Right> <Nop> 
+"inoremap <Up> <Nop> 
+"inoremap <Down> <Nop> 
+"inoremap <Left> <Nop> 
+"inoremap <Right> <Nop>
