@@ -27,6 +27,7 @@ endfunction
 
 autocmd FileType * :call SetUp(expand('<amatch>'))
 
+"ステータスラインのデザイン設定
 function! SetStatusLine()
 if mode() =~ 'i'
 	let id = 1
@@ -65,6 +66,7 @@ let g:netrw_alto=1
 
 let g:NetrwIsOpen=0
 
+"ファイル一覧の表示切り替え
 function! ToggleNetrw()
 if g:NetrwIsOpen
 	let i = bufnr("$")
@@ -81,6 +83,7 @@ else
 endif
 endfunction
 
+"新しいタブが開かれたときのファイル一覧の起動
 function! NetrwNewTab()
 let g:NetrwIsOpen=1
 if g:tabcheck == 0
@@ -89,6 +92,7 @@ if g:tabcheck == 0
 endif
 endfunction
 
+"ファイル一覧のクローズ
 function! NetrwClose()
 if g:NetrwIsOpen
 	let i = bufnr("$")
@@ -102,6 +106,7 @@ if g:NetrwIsOpen
 endif
 endfunction
 
+"Schemeの実行
 function! ScmRun(...)
 let l:fname=get(a:,1,"")
 if l:fname == ""
@@ -114,6 +119,23 @@ endif
 call term_sendkeys(g:scmterm,l:text)
 endfunction
 
+let g:scmterm=0
+"Scheme用のターミナルの起動
+function! ScmTermRun()
+	if g:scmterm == 0
+		rightbelow term gosh
+		let g:scmterm=term_list()[0]
+	endif
+endfunction
+
+"Scheme用のターミナルが閉じられたかどうかのチェック
+function! ScmCloseChk()
+	if match(term_list(),g:scmterm)
+		let g:scmterm=0
+	endif
+endfunction
+
+"C言語のコンパイルを行う
 function! CCompile(...)
 	let l:fname=expand("%")
 	if term_list() == []
@@ -124,6 +146,7 @@ function! CCompile(...)
 	call term_sendkeys(term_list()[0],l:text)
 endfunction
 
+"C言語のコンパイルから実行までを行う
 function! CRun(...)
 	let l:outName="./a.out"
 	for i in range(a:0)
@@ -137,33 +160,14 @@ function! CRun(...)
 	call term_sendkeys(term_list()[0],l:text)
 endfunction
 
+"catの内容の取得
 function! GetText(fname)
 	let l:cmd="cat ".a:fname
 	let l:text=system(l:cmd)
 	return l:text
 endfunction
 
-let g:scmterm=0
-function! ScmTermRun()
-	if g:scmterm == 0
-		rightbelow term gosh
-		let g:scmterm=term_list()[0]
-	endif
-endfunction
-
-function! ScmCloseChk()
-	if match(term_list(),g:scmterm)
-		let g:scmterm=0
-	endif
-endfunction
-
-"これはボツになった おそすぎる
-function! FilePath(fname)
-	let l:cmd="find ~/ -name ".a:fname." -type f -perm /u=rw"
-	let l:find=system(l:cmd)
-	echo l:find
-endfunction
-
+"行番号、タブ可視化の解除
 function! ManualCopy()
 	set nonu
 	set nolist
@@ -176,7 +180,9 @@ command! -nargs=? ScmRun :call ScmRun(<f-args>)
 command! -nargs=* CRun :call CRun(<f-args>)
 command! -nargs=? CCom :call CCompile(<f-args>)
 
+"ターミナルをファイル一覧がある状態でもきれいに表示可能にする
 command! Term :rightbelow term
+"クリップボードに直接貼り付けできないので行番号、タブ可視化の解除
 command! Cp :call ManualCopy()
 "ファイル一覧の自動展開等の操作
 autocmd TabEnter * :let g:tabcheck=0
@@ -184,8 +190,6 @@ autocmd BufReadPost * :call NetrwNewTab()
 autocmd QuitPre,TabLeave * :call NetrwClose()
 autocmd TabClosed * :let g:NetrwIsOpen=0
 autocmd VimEnter * :wincmd l
-"スペースからタブへの自動置換(起動時)
-"autocmd VimEnter * :retab!
 
 autocmd WinEnter * :call ScmCloseChk()
 
@@ -203,13 +207,8 @@ set incsearch
 noremap <silent>== :call ToggleNetrw()<CR>
 noremap ^ ggVG=
 
-nnoremap <CR> i<CR><ESC>
-
-tnoremap <C-e> <C-\><C-n>:q!<CR>
-tnoremap <C-n><C-n> <C-\><C-n>
-
-inoremap <C-^> <ESC>ggVG=
-
+tnoremap <silent><C-e> <C-\><C-n>:q!<CR>
+"自動補完
 inoremap {<CR> {}<Left><CR><ESC><S-o>
 inoremap [<CR> []<Left><CR><ESC><S-o>
 inoremap (<CR> ()<Left><CR><ESC><S-o>
@@ -218,16 +217,11 @@ inoremap ( ()<Left>
 inoremap { {}<Left>
 inoremap [ []<Left>
 inoremap " ""<Left>
+"インサートモード中の移動
+inoremap <C-l> <C-o>l
+inoremap <C-k> <C-o>k
+inoremap <C-j> <C-o>j
+inoremap <C-h> <C-o>h
+"補完検索中の操作
 inoremap <expr><C-n> pumvisible() ? "<Down>" : "<C-n>"
 inoremap <expr><C-p> pumvisible() ? "<Up>" : "<C-p>"
-
-"vimをマスターするために
-" 矢印キーを無効にする
-"noremap <Up> <Nop> 
-"noremap <Down> <Nop> 
-"noremap <Left> <Nop> 
-"noremap <Right> <Nop> 
-"inoremap <Up> <Nop> 
-"inoremap <Down> <Nop> 
-"inoremap <Left> <Nop> 
-"inoremap <Right> <Nop>
