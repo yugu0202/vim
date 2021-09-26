@@ -106,79 +106,11 @@ if g:NetrwIsOpen
 endif
 endfunction
 
-"Schemeの実行
-function! ScmRun(...)
-let l:fname=get(a:,1,"")
-if l:fname == ""
-	let l:line=getline(0,line("$"))
-	let l:buffText=join(l:line,"")
-	let l:text=l:buffText . "\n"
-else
-	let l:text=GetText(l:fname)
-endif
-call term_sendkeys(g:scmterm,l:text)
-endfunction
-
-let g:scmterm=0
-"Scheme用のターミナルの起動
-function! ScmTermRun()
-	if g:scmterm == 0
-		rightbelow term gosh
-		let g:scmterm=term_list()[0]
-	endif
-endfunction
-
-"Scheme用のターミナルが閉じられたかどうかのチェック
-function! ScmCloseChk()
-	if match(term_list(),g:scmterm)
-		let g:scmterm=0
-	endif
-endfunction
-
-"C言語のコンパイルを行う
-function! CCompile(...)
-	let l:fname=expand("%")
-	if term_list() == []
-		rightbelow term
-	endif
-	let l:opts=get(a:,1,"")
-	let l:text="gcc " . l:fname . " " . l:opts . "\n"
-	call term_sendkeys(term_list()[0],l:text)
-endfunction
-
-"C言語のコンパイルから実行までを行う
-function! CRun(...)
-	let l:outName="./a.out"
-	for i in range(a:0)
-		if a:000[i] == "-o"
-			let l:outName="./" . get(a:000,i+1,"")
-			break
-		endif
-	endfor
-	call CCompile(join(a:000))
-	let l:text=l:outName . "\n"
-	call term_sendkeys(term_list()[0],l:text)
-endfunction
-
-"catの内容の取得
-function! GetText(fname)
-	let l:cmd="cat ".a:fname
-	let l:text=system(l:cmd)
-	return l:text
-endfunction
-
 "行番号、タブ可視化の解除
 function! ManualCopy()
 	set nonu
 	set nolist
 endfunction
-
-"goshのパス通しをしていることが条件
-command! ScmTerm :call ScmTermRun()
-command! -nargs=? ScmRun :call ScmRun(<f-args>)
-"gccのパス通し前提
-command! -nargs=* CRun :call CRun(<f-args>)
-command! -nargs=? CCom :call CCompile(<f-args>)
 
 "ターミナルをファイル一覧がある状態でもきれいに表示可能にする
 command! Term :rightbelow term
@@ -190,8 +122,6 @@ autocmd BufReadPost * :call NetrwNewTab()
 autocmd QuitPre,TabLeave * :call NetrwClose()
 autocmd TabClosed * :let g:NetrwIsOpen=0
 autocmd VimEnter * :wincmd l
-
-autocmd WinEnter * :call ScmCloseChk()
 
 set tabstop=2
 set history=5000
@@ -217,11 +147,6 @@ inoremap ( ()<Left>
 inoremap { {}<Left>
 inoremap [ []<Left>
 inoremap " ""<Left>
-"インサートモード中の移動
-inoremap <C-l> <C-o>l
-inoremap <C-k> <C-o>k
-inoremap <C-j> <C-o>j
-inoremap <C-h> <C-o>h
 "補完検索中の操作
 inoremap <expr><C-n> pumvisible() ? "<Down>" : "<C-n>"
 inoremap <expr><C-p> pumvisible() ? "<Up>" : "<C-p>"
