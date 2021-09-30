@@ -15,8 +15,6 @@ set laststatus=2
 ""set mouse=a
 "set ttymouse=xterm2
 
-let g:testecho='test'
-
 " 補完表示時のEnterで改行をしない
 inoremap <expr><CR>  pumvisible() ? "<C-y>" : "<CR>"
 
